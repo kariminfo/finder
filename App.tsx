@@ -116,12 +116,16 @@ const PlaceList = ({
   places, 
   onSelect, 
   selectedId, 
-  userLocation 
+  userLocation,
+  onExpand,
+  currentRadius
 }: { 
   places: OSMNode[]; 
   onSelect: (id: number) => void; 
   selectedId: number | null; 
   userLocation: Location | null;
+  onExpand?: () => void;
+  currentRadius?: number;
 }) => {
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -141,8 +145,18 @@ const PlaceList = ({
         <div className="bg-slate-100 p-4 rounded-full mb-4">
             <Icon name="SearchX" size={32} className="opacity-50" />
         </div>
-        <p className="font-medium">لا توجد نتائج قريبة.</p>
-        <p className="text-xs mt-1">حاول البحث في منطقة أخرى.</p>
+        <p className="font-medium text-slate-600">لا توجد نتائج قريبة.</p>
+        <p className="text-xs mt-1 mb-6">جربنا البحث في نطاق {currentRadius ? currentRadius / 1000 : 5} كلم.</p>
+        
+        {onExpand && (
+          <button 
+            onClick={onExpand}
+            className="bg-blue-600 text-white px-6 py-3 rounded-full font-bold shadow-lg active:scale-95 transition-transform flex items-center gap-2"
+          >
+            <Icon name="Maximize" size={18} />
+            توسيع نطاق البحث
+          </button>
+        )}
       </div>
     );
   }
@@ -206,6 +220,7 @@ const MapPage = () => {
   const [location, setLocation] = useState<Location | null>(null);
   const [points, setPoints] = useState<OSMNode[]>([]);
   const [loading, setLoading] = useState(true);
+  const [radius, setRadius] = useState(DEFAULT_RADIUS_METERS);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const navigate = useNavigate();
@@ -246,10 +261,11 @@ const MapPage = () => {
   useEffect(() => {
     if (location && osmKey && osmValue) {
       setLoading(true);
-      fetchNearbyServices(location.lat, location.lng, osmKey, osmValue)
+      fetchNearbyServices(location.lat, location.lng, osmKey, osmValue, radius)
         .then(data => {
           setPoints(data);
           setLoading(false);
+          setError(null);
         })
         .catch(err => {
           console.error(err);
@@ -257,7 +273,27 @@ const MapPage = () => {
           setLoading(false);
         });
     }
-  }, [location, osmKey, osmValue]);
+  }, [location, osmKey, osmValue, radius]);
+
+  const expandSearch = () => {
+    setRadius(prev => prev + 5000);
+  };
+
+  const handleRetry = () => {
+    setLoading(true);
+    setError(null);
+    if (location) {
+      fetchNearbyServices(location.lat, location.lng, osmKey!, osmValue!, radius)
+        .then(data => {
+          setPoints(data);
+          setLoading(false);
+        })
+        .catch(err => {
+          setError(`خطأ: ${err.message}`);
+          setLoading(false);
+        });
+    }
+  };
 
   return (
     <div className="h-[100dvh] flex flex-col md:flex-row relative overflow-hidden bg-slate-50">
@@ -271,9 +307,17 @@ const MapPage = () => {
          >
            <Icon name="ArrowRight" size={20} />
          </button>
-         <span className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-lg text-sm font-bold text-slate-800 pointer-events-auto border border-white/50">
+         <span className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-lg text-sm font-bold text-slate-800 pointer-events-auto border border-white/50 flex items-center gap-2">
             {label}
+            {loading && <Icon name="Loader2" size={14} className="animate-spin text-blue-600" />}
          </span>
+         <button 
+           onClick={handleRetry} 
+           className="pointer-events-auto bg-white p-3 rounded-full shadow-xl text-blue-600 active:rotate-180 transition-all flex items-center justify-center border border-slate-100"
+           aria-label="تحديث"
+         >
+           <Icon name="RefreshCw" size={20} />
+         </button>
       </div>
 
       {/* --- Sidebar (Desktop: Right, Mobile: Bottom) --- */}
@@ -300,9 +344,15 @@ const MapPage = () => {
                     <span>جاري البحث عن أقرب الأماكن...</span>
                 </div>
             ) : error ? (
-                <div className="p-8 text-center text-red-500 bg-red-50 m-4 rounded-xl border border-red-100">
-                    <Icon name="AlertCircle" className="mx-auto mb-2" />
-                    {error}
+                <div className="p-8 text-center bg-red-50 m-4 rounded-xl border border-red-100">
+                    <Icon name="AlertCircle" className="mx-auto mb-2 text-red-500" />
+                    <p className="text-red-700 font-medium mb-4">{error}</p>
+                    <button 
+                      onClick={handleRetry}
+                      className="bg-red-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-md hover:bg-red-700 transition"
+                    >
+                      إعادة المحاولة
+                    </button>
                 </div>
             ) : (
                 <PlaceList 
@@ -310,6 +360,8 @@ const MapPage = () => {
                     onSelect={setSelectedId} 
                     selectedId={selectedId}
                     userLocation={location}
+                    onExpand={expandSearch}
+                    currentRadius={radius}
                 />
             )}
         </div>

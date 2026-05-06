@@ -12,6 +12,7 @@ export const fetchNearbyServices = async (
   lng: number,
   key: string,
   value: string,
+  radius: number = DEFAULT_RADIUS_METERS,
   extraTags?: Record<string, string>
 ): Promise<OSMNode[]> => {
   let tagFilter = `["${key}"="${value}"]`;
@@ -23,9 +24,9 @@ export const fetchNearbyServices = async (
   const query = `
     [out:json][timeout:25];
     (
-      node${tagFilter}(around:${DEFAULT_RADIUS_METERS},${lat},${lng});
-      way${tagFilter}(around:${DEFAULT_RADIUS_METERS},${lat},${lng});
-      relation${tagFilter}(around:${DEFAULT_RADIUS_METERS},${lat},${lng});
+      node${tagFilter}(around:${radius},${lat},${lng});
+      way${tagFilter}(around:${radius},${lat},${lng});
+      relation${tagFilter}(around:${radius},${lat},${lng});
     );
     out center;
   `;
@@ -47,6 +48,7 @@ export const fetchNearbyServices = async (
       }
 
       const data = await response.json();
+      console.log(`Success from ${url}: found ${data.elements?.length || 0} elements`);
       
       return data.elements.map((el: any) => ({
         id: el.id,

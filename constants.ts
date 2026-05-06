@@ -78,4 +78,4 @@ export const CATEGORIES: CategoryDefinition[] = [
 ];
 
 export const APP_NAME = "Finder";
-export const DEFAULT_RADIUS_METERS = 2000;
+export const DEFAULT_RADIUS_METERS = 5000;
