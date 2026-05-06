@@ -78,12 +78,16 @@ export const fetchNearbyServices = async (
       return [];
     }
 
-    return data.features.map((feature: any) => {
+    const points = data.features.map((feature: any) => {
       const props = feature.properties;
+      // Calculate distance to origin (lat, lng) to sort correctly
+      const d = props.distance || 0; // Geoapify usually provides this or we can calc
+
       return {
         id: props.place_id || Math.random(),
         lat: props.lat,
         lon: props.lon,
+        distance: d, // New field for pre-calculated distance
         tags: {
           name: props.name,
           'name:ar': props.name_international?.ar || props.name,
@@ -94,6 +98,9 @@ export const fetchNearbyServices = async (
         }
       };
     });
+
+    // Sort by distance if not already sorted by API
+    return points.sort((a: any, b: any) => a.distance - b.distance);
 
   } catch (error) {
     console.error("Geoapify fetch failed:", error);

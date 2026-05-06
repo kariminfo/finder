@@ -19,6 +19,7 @@ export interface OSMNode {
   id: number | string;
   lat: number;
   lon: number;
+  distance?: number;
   tags?: {
     name?: string;
     "name:ar"?: string;

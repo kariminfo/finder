@@ -226,9 +226,12 @@ const PlaceList = ({
         const name = place.tags?.['name:ar'] || place.tags?.['name'] || 'بدون اسم';
         const isSelected = selectedId === place.id;
         
-        // Calculate distance if user location available
+        // Use pre-calculated distance from API/Service if available
         let distStr = '';
-        if (userLocation) {
+        if (place.distance !== undefined) {
+          const d = place.distance;
+          distStr = d < 1000 ? `${Math.round(d)}m` : `${(d/1000).toFixed(1)}km`;
+        } else if (userLocation) {
           const d = calculateDistance(userLocation.lat, userLocation.lng, place.lat, place.lon);
           distStr = d < 1000 ? `${Math.round(d)}m` : `${(d/1000).toFixed(1)}km`;
         }
@@ -302,19 +305,48 @@ const MapPage = () => {
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
-      },
-      (err) => {
-        setError("المرجو تفعيل خدمة الموقع (GPS) للاستمرار.");
-        setLoading(false);
-      },
-      { enableHighAccuracy: true }
-    );
+    // Optimized Geolocation Fetching Strategy
+    const getPosition = () => {
+      // Step 1: Try with low accuracy first (faster, less likely to drop connection)
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (err) => {
+          console.warn("Low accuracy fetch failed, trying high accuracy...", err);
+          
+          // Step 2: Fallback to high accuracy only if needed
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              setLocation({
+                lat: pos.coords.latitude,
+                lng: pos.coords.longitude,
+              });
+            },
+            (finalErr) => {
+              console.error("Geolocation failed:", finalErr);
+              setError("المرجو تفعيل خدمة الموقع (GPS) للاستمرار.");
+              setLoading(false);
+            },
+            { 
+              enableHighAccuracy: true, 
+              timeout: 15000, 
+              maximumAge: 10000 
+            }
+          );
+        },
+        { 
+          enableHighAccuracy: false, 
+          timeout: 5000, 
+          maximumAge: 60000 // Accept 1-minute old cached location
+        }
+      );
+    };
+
+    getPosition();
   }, []);
 
   useEffect(() => {
