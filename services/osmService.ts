@@ -1,8 +1,6 @@
 import { OSMNode } from '../types';
 import { DEFAULT_RADIUS_METERS } from '../constants';
 
-const GEOAPIFY_API_KEY = (import.meta as any).env.VITE_GEOAPIFY_API_KEY;
-
 /**
  * Maps OpenStreetMap tag pairs to Geoapify categories.
  */
@@ -27,8 +25,8 @@ const mapOsmToGeoapify = (key: string, value: string): string => {
     'amenity:school': 'education.school',
     'amenity:university': 'education.university',
     'amenity:library': 'education.library',
-    'amenity:place_of_worship': 'religion.place_of_worship',
-    'amenity:mosque': 'religion.place_of_worship',
+    'amenity:place_of_worship': 'religion.place_of_worship.muslim',
+    'amenity:mosque': 'religion.place_of_worship.muslim',
     'amenity:cinema': 'entertainment.cinema',
     'leisure:park': 'leisure.park',
     'leisure:playground': 'leisure.playground',
@@ -38,7 +36,7 @@ const mapOsmToGeoapify = (key: string, value: string): string => {
     'amenity:toilets': 'amenity.toilet',
     'amenity:drinking_water': 'amenity.drinking_water',
     'amenity:parking': 'service.vehicle.parking',
-    'amenity:bureau_de_change': 'service.financial.currency_exchange'
+    'amenity:bureau_de_change': 'service.financial'
   };
   return mapping[`${key}:${value}`] || mapping[`amenity:${value}`] || mapping[`shop:${value}`] || `${key}.${value}`;
 };
@@ -52,14 +50,13 @@ export const fetchNearbyServices = async (
   _extraTags?: Record<string, string>
 ): Promise<OSMNode[]> => {
   const category = mapOsmToGeoapify(key, value);
-  const apiKey = GEOAPIFY_API_KEY;
 
-  if (!apiKey) {
+  if (!import.meta.env.VITE_GEOAPIFY_API_KEY) {
     console.warn("Geoapify API Key is missing. Falling back to empty results.");
     return [];
   }
 
-  const url = `https://api.geoapify.com/v2/places?categories=${category}&filter=circle:${lng},${lat},${radius}&bias=proximity:${lng},${lat}&limit=20&apiKey=${apiKey}`;
+  const url = `https://api.geoapify.com/v2/places?categories=${category}&filter=circle:${lng},${lat},${radius}&bias=proximity:${lng},${lat}&limit=20&apiKey=${import.meta.env.VITE_GEOAPIFY_API_KEY}`;
 
   console.log(`Searching Geoapify for category ${category} around ${lat},${lng} with radius ${radius}m`);
 

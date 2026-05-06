@@ -307,41 +307,55 @@ const MapPage = () => {
 
     // Optimized Geolocation Fetching Strategy
     const getPosition = () => {
-      // Step 1: Try with low accuracy first (faster, less likely to drop connection)
+      console.log("Starting geolocation fetch...");
+      
+      const success = (position: GeolocationPosition) => {
+        console.log("Location found:", position.coords.latitude, position.coords.longitude);
+        setLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+        // If location is found, the useEffect for fetching will start, 
+        // so no need to setLoading(false) here.
+      };
+
+      const failure = (err: GeolocationPositionError) => {
+        console.warn("Geolocation attempt failed:", err.message, err.code);
+        
+        // If it's a timeout or something else, and we haven't tried high accuracy yet
+        if (err.code !== err.PERMISSION_DENIED) {
+           // We already have a fallback for high accuracy below
+        } else {
+           setError("تم رفض الوصول للمكان. المرجو تفعيل GPS للسماح بالتطبيق بالعمل.");
+           setLoading(false);
+        }
+      };
+
+      // Step 1: Try with low accuracy first (faster, reliable in cities)
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-        },
+        success,
         (err) => {
-          console.warn("Low accuracy fetch failed, trying high accuracy...", err);
+          console.warn("Low accuracy fetch failed, trying high accuracy fallback...", err.message);
           
-          // Step 2: Fallback to high accuracy only if needed
+          // Step 2: Fallback to high accuracy
           navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              setLocation({
-                lat: pos.coords.latitude,
-                lng: pos.coords.longitude,
-              });
-            },
+            success,
             (finalErr) => {
-              console.error("Geolocation failed:", finalErr);
+              console.error("Final geolocation failure:", finalErr.message);
               setError("المرجو تفعيل خدمة الموقع (GPS) للاستمرار.");
               setLoading(false);
             },
             { 
               enableHighAccuracy: true, 
-              timeout: 15000, 
+              timeout: 10000, 
               maximumAge: 10000 
             }
           );
         },
         { 
           enableHighAccuracy: false, 
-          timeout: 5000, 
-          maximumAge: 60000 // Accept 1-minute old cached location
+          timeout: 4000, 
+          maximumAge: 60000 
         }
       );
     };

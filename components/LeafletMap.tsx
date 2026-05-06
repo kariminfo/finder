@@ -151,7 +151,7 @@ const LeafletMap: React.FC<LeafletMapProps> = ({
       >
         <TileLayerAny
           attribution='Powered by <a href="https://www.geoapify.com/" target="_blank">Geoapify</a> | &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url={`https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=${(import.meta as any).env.VITE_GEOAPIFY_API_KEY}`}
+          url={`https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=${import.meta.env.VITE_GEOAPIFY_API_KEY}`}
         />
         
         {/* Handle Routing and Camera Movements */}
