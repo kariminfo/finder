@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { HashRouter, Routes, Route, Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
 import { CATEGORIES, APP_NAME, DEFAULT_RADIUS_METERS } from './constants';
 import { Icon } from './components/Icon';
 import LeafletMap from './components/LeafletMap';
@@ -283,22 +282,7 @@ const MapPage = () => {
   const [radius, setRadius] = useState(DEFAULT_RADIUS_METERS);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<number | string | null>(null);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const navigate = useNavigate();
-
-  // Monitor Online/Offline Status
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
 
   // Robust Back Navigation Handler
   const handleBack = () => {
@@ -467,33 +451,10 @@ const MapPage = () => {
 };
 
 const App = () => {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
   return (
     <ErrorBoundary>
       <HashRouter>
         <div className="min-h-screen bg-slate-50 font-sans text-slate-900" dir="rtl">
-          {!isOnline && (
-            <motion.div 
-              initial={{ opacity: 0, y: -50 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="fixed top-20 left-1/2 -translate-x-1/2 z-[2000] bg-red-600 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm font-bold"
-            >
-              <Icon name="WifiOff" size={16} />
-              <span>انقطع الاتصال بالإنترنت</span>
-            </motion.div>
-          )}
           <Routes>
             <Route path="/" element={<><Header /><HomePage /></>} />
             <Route path="/category/:id" element={<><Header /><CategoryPage /></>} />
