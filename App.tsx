@@ -175,8 +175,8 @@ const PlaceList = ({
   currentRadius
 }: { 
   places: OSMNode[]; 
-  onSelect: (id: number) => void; 
-  selectedId: number | null; 
+  onSelect: (id: number | string) => void; 
+  selectedId: number | string | null; 
   userLocation: Location | null;
   onExpand?: () => void;
   currentRadius?: number;
@@ -281,7 +281,7 @@ const MapPage = () => {
   const [loading, setLoading] = useState(true);
   const [radius, setRadius] = useState(DEFAULT_RADIUS_METERS);
   const [error, setError] = useState<string | null>(null);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<number | string | null>(null);
   const navigate = useNavigate();
 
   // Robust Back Navigation Handler

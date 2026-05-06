@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet';
 import L from 'leaflet';
+
+const MapContainerAny = MapContainer as any;
+const TileLayerAny = TileLayer as any;
+const MarkerAny = Marker as any;
+const PopupAny = Popup as any;
+const PolylineAny = Polyline as any;
 import { OSMNode, Location } from '../types';
 import { Icon } from './Icon';
 
@@ -115,8 +121,8 @@ interface LeafletMapProps {
   userLocation: Location;
   points: OSMNode[];
   serviceLabel: string;
-  selectedId: number | null;
-  onSelect: (id: number) => void;
+  selectedId: number | string | null;
+  onSelect: (id: number | string) => void;
 }
 
 const LeafletMap: React.FC<LeafletMapProps> = ({ 
@@ -136,31 +142,27 @@ const LeafletMap: React.FC<LeafletMapProps> = ({
 
   return (
     <div className="h-full w-full z-0 relative bg-slate-200">
-      {/* @ts-ignore */}
-      <MapContainer
+      <MapContainerAny
         center={[userLocation.lat, userLocation.lng] as [number, number]}
         zoom={14}
         scrollWheelZoom={true}
         zoomControl={false}
         style={{ height: '100%', width: '100%' }}
       >
-        {/* @ts-ignore */}
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        <TileLayerAny
+          attribution='Powered by <a href="https://www.geoapify.com/" target="_blank">Geoapify</a> | &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url={`https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=${(import.meta as any).env.VITE_GEOAPIFY_API_KEY}`}
         />
         
         {/* Handle Routing and Camera Movements */}
         <RouteController userLocation={userLocation} destination={selectedPoint} />
 
         {/* User Location */}
-        {/* @ts-ignore */}
-        <Marker position={[userLocation.lat, userLocation.lng] as [number, number]} icon={UserLocationIcon}>
-          {/* @ts-ignore */}
-          <Popup closeButton={false} className="font-sans">
+        <MarkerAny position={[userLocation.lat, userLocation.lng] as [number, number]} icon={UserLocationIcon}>
+          <PopupAny closeButton={false} className="font-sans">
             <div className="text-center font-bold text-xs py-1 px-2">موقعك الحالي</div>
-          </Popup>
-        </Marker>
+          </PopupAny>
+        </MarkerAny>
 
         {/* Service Markers */}
         {points.map((point) => {
@@ -168,8 +170,7 @@ const LeafletMap: React.FC<LeafletMapProps> = ({
           const isSelected = selectedId === point.id;
 
           return (
-            /* @ts-ignore */
-            <Marker
+            <MarkerAny
               key={point.id}
               position={[point.lat, point.lon] as [number, number]}
               icon={createDestinationIcon(isSelected)}
@@ -178,7 +179,7 @@ const LeafletMap: React.FC<LeafletMapProps> = ({
               }}
               zIndexOffset={isSelected ? 1000 : 0}
             >
-              <Popup>
+              <PopupAny>
                 <div className="min-w-[160px] text-right font-sans" dir="rtl">
                   <h3 className="font-bold text-base text-slate-800 mb-1">{name}</h3>
                   <p className="text-xs text-slate-500 mb-3">{serviceLabel}</p>
@@ -190,11 +191,11 @@ const LeafletMap: React.FC<LeafletMapProps> = ({
                     <Icon name="Navigation" size={12} />
                   </button>
                 </div>
-              </Popup>
-            </Marker>
+              </PopupAny>
+            </MarkerAny>
           );
         })}
-      </MapContainer>
+      </MapContainerAny>
     </div>
   );
 };

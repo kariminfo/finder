@@ -16,7 +16,7 @@ export interface CategoryDefinition {
 }
 
 export interface OSMNode {
-  id: number;
+  id: number | string;
   lat: number;
   lon: number;
   tags?: {
