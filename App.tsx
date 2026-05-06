@@ -253,7 +253,7 @@ const MapPage = () => {
         })
         .catch(err => {
           console.error(err);
-          setError("حدث خطأ أثناء جلب البيانات.");
+          setError(`خطأ في جلب البيانات: ${err.message || 'مشكل في الشبكة'}`);
           setLoading(false);
         });
     }

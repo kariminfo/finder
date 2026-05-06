@@ -1,7 +1,11 @@
 import { OSMNode } from '../types';
 import { DEFAULT_RADIUS_METERS } from '../constants';
 
-const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+const OVERPASS_MIRRORS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.osm.ch/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter'
+];
 
 export const fetchNearbyServices = async (
   lat: number,
@@ -10,19 +14,12 @@ export const fetchNearbyServices = async (
   value: string,
   extraTags?: Record<string, string>
 ): Promise<OSMNode[]> => {
-  // Construct the query
-  // We use [out:json] for JSON format.
-  // We query 'node', 'way', and 'relation' to be comprehensive (e.g. a hospital might be a polygon/way).
-  // 'around' filters by radius.
-  
   let tagFilter = `["${key}"="${value}"]`;
   
-  // Special case handling (e.g., Mosque needs amenity=place_of_worship AND religion=muslim)
   if (value === 'place_of_worship') {
       tagFilter += `["religion"="muslim"]`;
   }
 
-  // We use `out center;` to get the center coordinate of ways/relations automatically
   const query = `
     [out:json][timeout:25];
     (
@@ -33,31 +30,36 @@ export const fetchNearbyServices = async (
     out center;
   `;
 
-  try {
-    const response = await fetch(OVERPASS_URL, {
-      method: 'POST',
-      body: `data=${encodeURIComponent(query)}`,
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    });
+  let lastError: any = null;
 
-    if (!response.ok) {
-      throw new Error(`Overpass API error: ${response.statusText}`);
+  for (const url of OVERPASS_MIRRORS) {
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        body: `data=${encodeURIComponent(query)}`,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Overpass API error (${url}): ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      return data.elements.map((el: any) => ({
+        id: el.id,
+        lat: el.lat || el.center?.lat,
+        lon: el.lon || el.center?.lon,
+        tags: el.tags,
+      })).filter((el: OSMNode) => el.lat && el.lon);
+
+    } catch (error) {
+      console.warn(`Failed to fetch from ${url}, trying next...`, error);
+      lastError = error;
     }
-
-    const data = await response.json();
-    
-    // Normalize data: 'center' property in ways/relations becomes lat/lon
-    return data.elements.map((el: any) => ({
-      id: el.id,
-      lat: el.lat || el.center?.lat,
-      lon: el.lon || el.center?.lon,
-      tags: el.tags,
-    })).filter((el: OSMNode) => el.lat && el.lon); // Ensure we have coordinates
-
-  } catch (error) {
-    console.error("Failed to fetch OSM data:", error);
-    throw error;
   }
+
+  throw lastError || new Error("Failed to connect to all Overpass servers");
 };
