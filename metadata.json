@@ -1,0 +1,7 @@
+{
+  "name": "Finder - الباحث الشامل",
+  "description": "A comprehensive PWA to find nearby services (Health, Finance, Food, etc.) using OpenStreetMap and Geolocation.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
