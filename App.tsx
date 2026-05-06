@@ -24,6 +24,51 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 // --- Components ---
 
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("Uncaught error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6 text-center">
+          <div className="max-w-md bg-white p-8 rounded-3xl shadow-xl border border-red-100">
+            <div className="bg-red-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Icon name="AlertTriangle" className="text-red-600" size={32} />
+            </div>
+            <h1 className="text-2xl font-bold text-slate-800 mb-4">حدث خطأ مفاجئ</h1>
+            <p className="text-slate-500 mb-6 text-sm leading-relaxed">
+              وقع مشكل تقني في التطبيق. المرجو إعادة تحميل الصفحة أو المحاولة لاحقاً.
+            </p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="bg-blue-600 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:bg-blue-700 transition"
+            >
+              إعادة تحميل الصفحة
+            </button>
+            {process.env.NODE_ENV === 'development' && (
+              <pre className="mt-6 p-4 bg-slate-100 rounded-lg text-left text-[10px] overflow-auto max-h-40">
+                {String(this.state.error)}
+              </pre>
+            )}
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const Header = () => (
   <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-slate-100">
     <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
@@ -393,15 +438,17 @@ const MapPage = () => {
 
 const App = () => {
   return (
-    <HashRouter>
-      <div className="min-h-screen bg-slate-50 font-sans text-slate-900" dir="rtl">
-        <Routes>
-          <Route path="/" element={<><Header /><HomePage /></>} />
-          <Route path="/category/:id" element={<><Header /><CategoryPage /></>} />
-          <Route path="/map" element={<MapPage />} />
-        </Routes>
-      </div>
-    </HashRouter>
+    <ErrorBoundary>
+      <HashRouter>
+        <div className="min-h-screen bg-slate-50 font-sans text-slate-900" dir="rtl">
+          <Routes>
+            <Route path="/" element={<><Header /><HomePage /></>} />
+            <Route path="/category/:id" element={<><Header /><CategoryPage /></>} />
+            <Route path="/map" element={<MapPage />} />
+          </Routes>
+        </div>
+      </HashRouter>
+    </ErrorBoundary>
   );
 };
 

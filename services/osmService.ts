@@ -37,30 +37,65 @@ export const fetchNearbyServices = async (
 
   for (const url of OVERPASS_MIRRORS) {
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        body: `data=${encodeURIComponent(query)}`,
+      // Use GET with a timeout signal if supported, or just shorter timeout in query
+      const fullUrl = `${url}?data=${encodeURIComponent(query)}`;
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+      
+      const response = await fetch(fullUrl, {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
         },
+        signal: controller.signal
       });
 
+      clearTimeout(timeoutId);
+
+      const contentType = response.headers.get("content-type");
       if (!response.ok) {
-        throw new Error(`Overpass API error (${url}): ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`Overpass API error (${url}): ${response.status} ${response.statusText} - ${errorText.substring(0, 100)}`);
+      }
+
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text();
+        if (text.includes("<") && text.includes(">")) {
+          throw new Error(`Received XML/HTML instead of JSON from ${url}. Check if the mirror is down or rate limited.`);
+        }
+        throw new Error(`Expected JSON but got ${contentType} from ${url}`);
       }
 
       const data = await response.json();
+      
+      if (!data || typeof data !== 'object') {
+        throw new Error(`Malformed JSON response from ${url}`);
+      }
+
       console.log(`Success from ${url}: found ${data.elements?.length || 0} elements`);
       
-      return data.elements.map((el: any) => ({
-        id: el.id,
-        lat: el.lat || el.center?.lat,
-        lon: el.lon || el.center?.lon,
-        tags: el.tags,
-      })).filter((el: OSMNode) => el.lat && el.lon);
+      if (!Array.isArray(data.elements)) {
+        console.warn(`No 'elements' array in response from ${url}`, data);
+        return [];
+      }
 
-    } catch (error) {
-      console.warn(`Failed to fetch from ${url}, trying next...`, error);
+      return data.elements
+        .filter((el: any) => el && typeof el === 'object')
+        .map((el: any) => ({
+          id: el.id,
+          lat: el.lat || el.center?.lat,
+          lon: el.lon || el.center?.lon,
+          tags: el.tags || {},
+        }))
+        .filter((el: OSMNode) => el.lat && el.lon);
+
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.warn(`Fetch from ${url} timed out`);
+      } else {
+        console.warn(`Failed to fetch from ${url}, trying next...`, error);
+      }
       lastError = error;
     }
   }
