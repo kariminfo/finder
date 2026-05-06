@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { HashRouter, Routes, Route, Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { CATEGORIES, APP_NAME } from './constants';
+import { CATEGORIES, APP_NAME, DEFAULT_RADIUS_METERS } from './constants';
 import { Icon } from './components/Icon';
 import LeafletMap from './components/LeafletMap';
 import { fetchNearbyServices } from './services/osmService';
