@@ -32,14 +32,13 @@ export const fetchNearbyServices = async (
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000); 
       
-      // Standard POST request as requested for best compatibility
-      const response = await fetch(url, {
-        method: 'POST',
+      // التعديل السحري: استعمال GET عوض POST لتفادي حظر Vercel و CORS
+      const fullUrl = `${url}?data=${encodeURIComponent(query)}`;
+      const response = await fetch(fullUrl, {
+        method: 'GET',
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: `data=${encodeURIComponent(query)}`,
         signal: controller.signal
       });
 
