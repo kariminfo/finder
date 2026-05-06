@@ -21,28 +21,23 @@ export const fetchNearbyServices = async (
       tagFilter += `["religion"="muslim"]`;
   }
 
-  const query = `
-    [out:json][timeout:25];
-    (
-      node${tagFilter}(around:${radius},${lat},${lng});
-      way${tagFilter}(around:${radius},${lat},${lng});
-      relation${tagFilter}(around:${radius},${lat},${lng});
-    );
-    out center;
-  `;
+  const query = `[out:json][timeout:25];nwr${tagFilter}(around:${radius},${lat},${lng});out center;`;
+
+  console.log(`Searching for ${key}=${value} around ${lat},${lng} with radius ${radius}m`);
 
   let lastError: any = null;
 
   for (const url of OVERPASS_MIRRORS) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000); 
       
+      // Standard POST request as requested for best compatibility
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
           'Accept': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: `data=${encodeURIComponent(query)}`,
         signal: controller.signal

@@ -191,7 +191,12 @@ const PlaceList = ({
             <Icon name="SearchX" size={32} className="opacity-50" />
         </div>
         <p className="font-medium text-slate-600">لا توجد نتائج قريبة.</p>
-        <p className="text-xs mt-1 mb-6">جربنا البحث في نطاق {currentRadius ? currentRadius / 1000 : 5} كلم.</p>
+        <p className="text-xs mt-1 mb-2">جربنا البحث في نطاق {currentRadius ? currentRadius / 1000 : 5} كلم.</p>
+        {userLocation && (
+          <p className="text-[10px] text-slate-300 font-mono mb-6">
+            ({userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)})
+          </p>
+        )}
         
         {onExpand && (
           <button 
