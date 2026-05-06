@@ -1,18 +1,6 @@
 {
   "rewrites": [
     {
-      "source": "/api/overpass",
-      "destination": "https://overpass-api.de/api/interpreter"
-    },
-    {
-      "source": "/api/overpass-mirror1",
-      "destination": "https://overpass.osm.ch/api/interpreter"
-    },
-    {
-      "source": "/api/overpass-mirror2",
-      "destination": "https://overpass.kumi.systems/api/interpreter"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
