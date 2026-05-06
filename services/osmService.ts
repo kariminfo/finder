@@ -2,11 +2,9 @@ import { OSMNode } from '../types';
 import { DEFAULT_RADIUS_METERS } from '../constants';
 
 const OVERPASS_MIRRORS = [
-  '/api/overpass', // Vercel Proxy 1
-  '/api/overpass-mirror1', // Vercel Proxy 2
-  '/api/overpass-mirror2', // Vercel Proxy 3
-  'https://overpass-api.de/api/interpreter', // Direct fallback
-  'https://overpass.osm.ch/api/interpreter'
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.osm.ch/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter'
 ];
 
 export const fetchNearbyServices = async (
@@ -37,17 +35,16 @@ export const fetchNearbyServices = async (
 
   for (const url of OVERPASS_MIRRORS) {
     try {
-      // Use GET with a timeout signal if supported, or just shorter timeout in query
-      const fullUrl = `${url}?data=${encodeURIComponent(query)}`;
-      
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
       
-      const response = await fetch(fullUrl, {
-        method: 'GET',
+      const response = await fetch(url, {
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
           'Accept': 'application/json',
         },
+        body: `data=${encodeURIComponent(query)}`,
         signal: controller.signal
       });
 
